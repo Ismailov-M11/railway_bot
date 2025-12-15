@@ -5,3 +5,26 @@ __pycache__/
 .idea/
 .vscode/
 *.log
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+*.env
+
+# Logs
+*.log
+*.err
+*.out
+
+# Databases
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
