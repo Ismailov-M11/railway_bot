@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, Any, Tuple, Optional, List
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from aiogram import Bot
 
 from db import list_routes, set_route_state, get_route_state, list_users, get_user, update_route_field, increment_notification_count, delete_route, update_last_notified, reset_notification_count
@@ -179,7 +179,9 @@ def fmt_date_for_ui(lang: str, date_str: str) -> str:
 async def build_route_message(lang: str, route: Dict[str, Any], api_json: Dict[str, Any]) -> Tuple[bool, str]:
     available, trains_data, time_on_way = parse_ticket_info(api_json)
 
-    ts = datetime.now().strftime("%H:%M")
+    # Tashkent Time (UTC+5)
+    tz_uz = timezone(timedelta(hours=5))
+    ts = datetime.now(tz_uz).strftime("%H:%M")
     chk_line = t(lang, "check_time").format(ts=ts)
     
     # Header date
