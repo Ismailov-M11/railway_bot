@@ -78,10 +78,10 @@ TEXT: Dict[str, Dict[str, str]] = {
         "lang_uz": "🇺🇿 O'zbekcha",
         "lang_en": "🇬🇧 English",
 
-        "add": "➕ Marshrut qo‘shish",
-        "my": "📋 Mening marshrutlarim",
+        "add": "➕ Yo'nalish qo‘shish",
+        "my": "📋 Mening yo'nalishlarim",
         "settings": "⚙️ Sozlamalar",
-        "check": "🔍 Marshrutlarni tekshirish",
+        "check": "🔍 Yo'nalishlarni tekshirish",
         "menu_main": "🏠 Bosh sahifa",
 
         "cancel": "❌ Bekor qilish",
@@ -93,18 +93,18 @@ TEXT: Dict[str, Dict[str, str]] = {
 
         "city_not_found": "❌ Shahar topilmadi. Qayta urinib ko‘ring.",
         "bad_date": "❌ Sana formati noto‘g‘ri.",
-        "saved": "✅ Marshrut muvaffaqiyatli qo‘shildi.",
-        "max_routes": "❌ Sizda maksimal marshrutlar soni (5) mavjud.",
+        "saved": "✅ Yo'nalish muvaffaqiyatli qo‘shildi.",
+        "max_routes": "❌ Sizda maksimal yo'nalishlar soni (5) mavjud.",
 
-        "no_routes": "📭 Sizda hali marshrutlar yo‘q.",
-        "route_deleted": "🗑 Marshrut o‘chirildi.",
-        "delete_confirm": "❓ Rostdan ham marshrutni o‘chirmoqchimisiz?",
+        "no_routes": "📭 Sizda hali yo'nalishlar yo‘q.",
+        "route_deleted": "🗑 Yo'nalish o‘chirildi.",
+        "delete_confirm": "❓ Rostdan ham yo'nalishni o‘chirmoqchimisiz?",
         "yes": "✅ Ha",
         "no": "❌ Yo‘q",
 
-        "route_view_title": "📍 Marshrut №{n}",
-        "edit": "✏️ Marshrutni o‘zgartirish",
-        "delete": "🗑 Marshrutni o‘chirish",
+        "route_view_title": "📍 Yo'nalish №{n}",
+        "edit": "✏️ Yo'nalishni o‘zgartirish",
+        "delete": "🗑 Yo'nalishni o‘chirish",
 
         "edit_from": "🏙 Boshlang‘ich nuqtani o‘zgartirish",
         "edit_to": "🏁 Yakuniy nuqtani o‘zgartirish",
@@ -123,9 +123,9 @@ TEXT: Dict[str, Dict[str, str]] = {
         "ticket_yes": "✅ Bilet bor",
         "check_time": "⏰ Tekshiruv: {ts}",
         "trip_time": "⏱ Yo‘lda: {t}",
-        "route_line": "🚆 {from_} → {to_}\n📅 {date}\n\n{chk}\n\n{cars}\n\n{status}", # Reordered slightly as per request structure
+        "route_line": "🚆 {from_} → {to_}\n📅 {date}\n\n{chk}\n\n{cars}\n\n{status}",
         "cars_empty": "",
-        "car_line": "{icon} {type_} — {seats} ta — {price} so‘m", # Simplified base, rich one built in code
+        "car_line": "{icon} {type_} — {seats} ta — {price} so‘m",
         "train_number": "🚄 Poyezd {num}",
         "unknown_error": "⚠️ Xatolik yuz berdi. Keyinroq urinib ko‘ring.",
         "select_route": "📋 Sizning yo'nalishlaringiz:",
@@ -137,9 +137,9 @@ TEXT: Dict[str, Dict[str, str]] = {
         "arr_time_label": "🔴 Yetib borish",
         "travel_time_label": "⏳ Yo‘l vaqti",
         "train_route_label": "🛤 {route}",
-         "time_h_m": "{h} soat {m} daqiqa",
-         "year_suffix": " yil",
-         "months": ["", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+        "time_h_m": "{h} soat {m} daqiqa",
+        "year_suffix": " yil",
+        "months": ["", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
     },
     "en": {
         "hello_3": "🇷🇺 Привет! Я бот для отслеживания ж/д билетов. Я помогу вам найти билеты и уведомлю, когда они появятся.\n\n🇺🇿 Salom! Men temir yo'l chiptalarini kuzatib boruvchi botman. Men sizga chiptalarni topishda yordam beraman va ular paydo bo'lganda sizni xabardor qilaman.\n\n🇬🇧 Hi! I am a bot for tracking railway tickets. I'll help you find tickets and notify you when they appear.",

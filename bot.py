@@ -68,6 +68,7 @@ class RoutesFSM(StatesGroup):
 class SettingsFSM(StatesGroup):
     menu = State()
     changing_lang = State()
+    changing_notify = State()
 
 # --- KEYBOARDS ---
 def kb_lang_reply(lang_ui: str, show_back: bool = True) -> ReplyKeyboardMarkup:
@@ -133,10 +134,10 @@ def kb_route_actions(lang: str) -> ReplyKeyboardMarkup:
 def kb_route_edit_menu(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t(lang, "back"))],
             [KeyboardButton(text=t(lang, "edit_from"))],
             [KeyboardButton(text=t(lang, "edit_to"))],
             [KeyboardButton(text=t(lang, "edit_date"))],
+            [KeyboardButton(text=t(lang, "back"))],
         ],
         resize_keyboard=True
     )
@@ -177,6 +178,9 @@ def kb_stations_inline(stations: List[Dict[str, str]], prefix: str) -> InlineKey
         name = s.get("name", "")
         buttons.append([InlineKeyboardButton(text=name, callback_data=f"pick:{prefix}:{code}")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+
 
 # --- HELPERS ---
 def parse_date_ddmmyyyy(text: str) -> str:
@@ -559,6 +563,14 @@ async def delete_confirm_handler(msg: Message, state: FSMContext):
              await msg.answer(t(lang, "no_routes"), reply_markup=kb_back(lang))
         return
 
+    if txt == t(lang, "yes"):
+        try:
+            await delete_route(route_id)
+        except Exception as e:
+            logger.error(f"Failed to delete route: {e}")
+            await msg.answer(t(lang, "unknown_error"))
+            return
+
         # 1. Clear state and show "Route deleted" msg
         await state.clear()
         
@@ -573,10 +585,6 @@ async def delete_confirm_handler(msg: Message, state: FSMContext):
         # 4. If routes exist, show them inline immediately
         if has_routes:
             await msg.answer(t(lang, "select_route"), reply_markup=kb_routes_inline(routes))
-            # And set state to LIST so "Back" works (if it had logic, but "Back" just clears state anyway)
-            # Actually, if we are in "Main Menu" mode essentially, but showing details...
-            # The user might click a route.
-            # If we want the user to be "in the list context", we should set state.
             await state.set_state(RoutesFSM.list)
         else:
             await msg.answer(t(lang, "no_routes"))
@@ -604,20 +612,37 @@ async def settings_menu_handler(msg: Message, state: FSMContext):
     if txt == t(lang, "settings_notify"):
         user = await get_user(msg.from_user.id)
         current_mode = user.get("notify_mode", "always")
+        await state.set_state(SettingsFSM.changing_notify)
         await msg.answer(t(lang, "settings_notify"), reply_markup=kb_notify_mode(lang, current_mode))
         return
 
-    # Remove checkmark from button text before comparing
-    if txt.replace(" ✅", "") == t(lang, "notify_always"):
-        await set_notify_mode(msg.from_user.id, "always")
-        user = await get_user(msg.from_user.id)
-        await msg.answer(t(lang, "settings_saved"), reply_markup=kb_settings_menu(lang))
+async def changing_notify_handler(msg: Message, state: FSMContext):
+    user = await get_user(msg.from_user.id)
+    lang = user["language"]
+    txt = (msg.text or "").strip()
+
+    if txt == t(lang, "back"):
+        await state.set_state(SettingsFSM.menu)
+        await msg.answer(t(lang, "settings_title"), reply_markup=kb_settings_menu(lang))
         return
 
-    if txt.replace(" ✅", "") == t(lang, "notify_on_available"):
-        await set_notify_mode(msg.from_user.id, "on_available")
+    # Remove checkmark for comparison
+    clean_txt = txt.replace(" ✅", "")
+    
+    new_mode = None
+    if clean_txt == t(lang, "notify_always"):
+        new_mode = "always"
+    elif clean_txt == t(lang, "notify_on_available"):
+        new_mode = "on_available"
+        
+    if new_mode:
+        await set_notify_mode(msg.from_user.id, new_mode)
+        await state.set_state(SettingsFSM.menu)
         await msg.answer(t(lang, "settings_saved"), reply_markup=kb_settings_menu(lang))
-        return
+    else:
+        # Unknown input, stay in state logic or just ignore? 
+        # Better to re-show menu if confusing, but usually we just return
+        pass
 
     if txt == t(lang, "back"):
         await state.clear()
@@ -736,18 +761,22 @@ async def main():
     dp.message.register(edit_date_handler, RoutesFSM.edit_date)
     
     # Delete Confirm
+    # Delete Confirm
     dp.message.register(delete_confirm_handler, RoutesFSM.delete_confirm)
+    # dp.callback_query.register(delete_route_confirm_callback, F.data.startswith("del_confirm:"))
+    # dp.callback_query.register(delete_route_cancel_callback, F.data.startswith("del_cancel:"))
 
     # 7. Settings
     dp.message.register(settings_menu_handler, SettingsFSM.menu)
     dp.message.register(changing_lang_handler, SettingsFSM.changing_lang)
+    dp.message.register(changing_notify_handler, SettingsFSM.changing_notify)
 
     # --- SCHEDULER ---
     scheduler = AsyncIOScheduler()
     # "cron" trigger for strict alignment (0, 5, 10, ...)
     # If user wants 30 mins: minute="0,30"
     # For now testing 5 mins: minute="*/5"
-    scheduler.add_job(scheduler_tick, "cron", minute="*/5", id="tick_30m", replace_existing=True, args=[bot])
+    scheduler.add_job(scheduler_tick, "cron", minute="*/5", second="30", id="tick_30m", replace_existing=True, args=[bot])
     scheduler.start()
     logger.info("Scheduler started.")
 
