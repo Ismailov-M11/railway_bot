@@ -561,11 +561,9 @@ async def delete_confirm_handler(msg: Message, state: FSMContext):
 
     if txt == t(lang, "yes"):
         await delete_route(route_id)
-        await msg.answer(t(lang, "route_deleted"))
-        routes = await list_routes(msg.from_user.id)
-        await state.set_state(RoutesFSM.list)
-        if not routes: await msg.answer(t(lang, "no_routes"), reply_markup=kb_back(lang))
-        else: await msg.answer(t(lang, "select_route"), reply_markup=kb_routes_inline(routes))
+        await state.clear()
+        has = (await count_routes(msg.from_user.id)) > 0
+        await msg.answer(t(lang, "route_deleted"), reply_markup=kb_main(lang, has))
         return
 
 # --- HANDLERS: SETTINGS ---
