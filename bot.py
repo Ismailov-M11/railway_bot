@@ -123,9 +123,9 @@ def kb_routes_inline(routes: List[Dict[str, Any]]) -> InlineKeyboardMarkup:
 def kb_route_actions(lang: str) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t(lang, "back"))],
             [KeyboardButton(text=t(lang, "edit"))],
             [KeyboardButton(text=t(lang, "delete"))],
+            [KeyboardButton(text=t(lang, "back"))],
         ],
         resize_keyboard=True
     )
@@ -559,11 +559,28 @@ async def delete_confirm_handler(msg: Message, state: FSMContext):
              await msg.answer(t(lang, "no_routes"), reply_markup=kb_back(lang))
         return
 
-    if txt == t(lang, "yes"):
-        await delete_route(route_id)
+        # 1. Clear state and show "Route deleted" msg
         await state.clear()
-        has = (await count_routes(msg.from_user.id)) > 0
-        await msg.answer(t(lang, "route_deleted"), reply_markup=kb_main(lang, has))
+        
+        # 2. Get updated routes immediately
+        routes = await list_routes(msg.from_user.id)
+        has_routes = len(routes) > 0
+        
+        # 3. Restore Main Menu Keyboard (so Yes/No is gone)
+        # We send this with the "deleted" text
+        await msg.answer(t(lang, "route_deleted"), reply_markup=kb_main(lang, has_routes))
+        
+        # 4. If routes exist, show them inline immediately
+        if has_routes:
+            await msg.answer(t(lang, "select_route"), reply_markup=kb_routes_inline(routes))
+            # And set state to LIST so "Back" works (if it had logic, but "Back" just clears state anyway)
+            # Actually, if we are in "Main Menu" mode essentially, but showing details...
+            # The user might click a route.
+            # If we want the user to be "in the list context", we should set state.
+            await state.set_state(RoutesFSM.list)
+        else:
+            await msg.answer(t(lang, "no_routes"))
+        
         return
 
 # --- HANDLERS: SETTINGS ---
