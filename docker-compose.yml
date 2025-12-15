@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+    env_file:
+      - .env
