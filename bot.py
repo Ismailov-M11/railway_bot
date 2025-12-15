@@ -616,6 +616,12 @@ async def settings_menu_handler(msg: Message, state: FSMContext):
         await msg.answer(t(lang, "settings_notify"), reply_markup=kb_notify_mode(lang, current_mode))
         return
 
+    if txt == t(lang, "back"):
+        await state.clear()
+        has = (await count_routes(msg.from_user.id)) > 0
+        await msg.answer(t(lang, "menu_main"), reply_markup=kb_main(lang, has))
+        return
+
 async def changing_notify_handler(msg: Message, state: FSMContext):
     user = await get_user(msg.from_user.id)
     lang = user["language"]
@@ -643,11 +649,6 @@ async def changing_notify_handler(msg: Message, state: FSMContext):
         # Unknown input, stay in state logic or just ignore? 
         # Better to re-show menu if confusing, but usually we just return
         pass
-
-    if txt == t(lang, "back"):
-        await state.clear()
-        has = (await count_routes(msg.from_user.id)) > 0
-        await msg.answer(t(lang, "menu_main"), reply_markup=kb_main(lang, has))
         return
 
 async def changing_lang_handler(msg: Message, state: FSMContext):
