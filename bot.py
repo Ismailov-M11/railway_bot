@@ -4,11 +4,12 @@ import re
 from typing import Dict, Any, List
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, MenuButtonWebApp, WebAppInfo
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiohttp import web
 
 # Import local simplified modules
 from config import BOT_TOKEN
@@ -774,14 +775,36 @@ async def main():
 
     # --- SCHEDULER ---
     scheduler = AsyncIOScheduler()
-    # "cron" trigger for strict alignment (0, 5, 10, ...)
-    # If user wants 30 mins: minute="0,30"
-    # For now testing 5 mins: minute="*/5"
     scheduler.add_job(scheduler_tick, "cron", minute="*/5", second="30", id="tick_30m", replace_existing=True, args=[bot])
     scheduler.start()
     logger.info("Scheduler started.")
 
-    await dp.start_polling(bot)
+    # --- WEB APP MENU BUTTON ---
+    from config import WEBAPP_URL
+    if WEBAPP_URL:
+        try:
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="🌐 Открыть",
+                    web_app=WebAppInfo(url=WEBAPP_URL),
+                )
+            )
+            logger.info("Web app menu button set: %s", WEBAPP_URL)
+        except Exception as e:
+            logger.warning("Could not set menu button: %s", e)
+
+    # --- API SERVER ---
+    from api_server import create_app as create_api_app
+    from config import API_PORT
+    api_runner = web.AppRunner(create_api_app())
+    await api_runner.setup()
+    await web.TCPSite(api_runner, "0.0.0.0", API_PORT).start()
+    logger.info("API server listening on port %d", API_PORT)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await api_runner.cleanup()
 
 if __name__ == "__main__":
     try:

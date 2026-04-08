@@ -11,6 +11,10 @@ if not BOT_TOKEN:
 
 DB_PATH = os.getenv("DB_PATH", "db.sqlite3")
 
+# Telegram Mini App
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://railway-bot.netlify.app").strip()
+API_PORT   = int(os.getenv("API_PORT", "8080"))
+
 STATIONS_API = "https://eticket.railway.uz/api/v1/handbook/stations/list"
 TRAINS_API = "https://eticket.railway.uz/api/v3/handbook/trains/list"
 
