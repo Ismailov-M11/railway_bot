@@ -263,11 +263,21 @@ async def api_update_settings(request: web.Request) -> web.Response:
     tid = ctx["telegram_id"]
     try:
         body = await request.json()
+        new_lang = None
         if body.get("language") in ("ru", "uz", "en"):
             await set_language(tid, body["language"])
+            new_lang = body["language"]
         if body.get("notify_mode") in ("always", "on_available"):
             await set_notify_mode(tid, body["notify_mode"])
         user = await get_user(tid)
+
+        # Refresh bot reply keyboard if language changed
+        if new_lang:
+            on_lang_change = request.app.get("on_lang_change")
+            if on_lang_change:
+                import asyncio
+                asyncio.ensure_future(on_lang_change(tid, new_lang))
+
         return ok({"user": user})
     except Exception as exc:
         logger.error("update_settings error: %s", exc)
@@ -290,8 +300,10 @@ async def api_stations(request: web.Request) -> web.Response:
 
 # ─── App factory ──────────────────────────────────────────────────────────────
 
-def create_app() -> web.Application:
+def create_app(bot=None, on_lang_change=None) -> web.Application:
     app = web.Application()
+    app["bot"] = bot
+    app["on_lang_change"] = on_lang_change
     app.router.add_route("OPTIONS", "/{path_info:.*}", handle_options)
     app.router.add_get   ("/api/user",               api_user)
     app.router.add_get   ("/api/routes",              api_get_routes)

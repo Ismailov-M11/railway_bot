@@ -785,7 +785,7 @@ async def main():
         try:
             await bot.set_chat_menu_button(
                 menu_button=MenuButtonWebApp(
-                    text="🌐 Открыть",
+                    text="OPEN",
                     web_app=WebAppInfo(url=WEBAPP_URL),
                 )
             )
@@ -796,7 +796,20 @@ async def main():
     # --- API SERVER ---
     from api_server import create_app as create_api_app
     from config import API_PORT
-    api_runner = web.AppRunner(create_api_app())
+
+    async def refresh_keyboard(telegram_id: int, lang: str) -> None:
+        """Called by API server after language change to update reply keyboard."""
+        try:
+            cnt = await count_routes(telegram_id)
+            await bot.send_message(
+                telegram_id,
+                t(lang, "settings_saved"),
+                reply_markup=kb_main(lang, has_routes=cnt > 0),
+            )
+        except Exception as e:
+            logger.warning("refresh_keyboard error: %s", e)
+
+    api_runner = web.AppRunner(create_api_app(bot=bot, on_lang_change=refresh_keyboard))
     await api_runner.setup()
     await web.TCPSite(api_runner, "0.0.0.0", API_PORT).start()
     logger.info("API server listening on port %d", API_PORT)
