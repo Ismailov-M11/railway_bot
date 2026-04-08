@@ -70,6 +70,7 @@ TEXT: Dict[str, Dict[str, str]] = {
         "time_h_m": "{h} часов {m} минут",
         "year_suffix": " года",
         "months": ["", "Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"],
+        "route_expired": "🗓 Маршрут {from_} → {to_} на {date} удалён, так как дата поездки уже прошла.",
     },
     "uz": {
         "hello_3": "🇷🇺 Привет! Я бот для отслеживания ж/д билетов. Я помогу вам найти билеты и уведомлю, когда они появятся.\n\n🇺🇿 Salom! Men temir yo'l chiptalarini kuzatib boruvchi botman. Men sizga chiptalarni topishda yordam beraman va ular paydo bo'lganda sizni xabardor qilaman.\n\n🇬🇧 Hi! I am a bot for tracking railway tickets. I'll help you find tickets and notify you when they appear.",
@@ -140,6 +141,7 @@ TEXT: Dict[str, Dict[str, str]] = {
         "time_h_m": "{h} soat {m} daqiqa",
         "year_suffix": " yil",
         "months": ["", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"],
+        "route_expired": "🗓 {from_} → {to_} yo'nalishi {date} sanasi uchun o'chirildi, chunki sayohat sanasi o'tib ketdi.",
     },
     "en": {
         "hello_3": "🇷🇺 Привет! Я бот для отслеживания ж/д билетов. Я помогу вам найти билеты и уведомлю, когда они появятся.\n\n🇺🇿 Salom! Men temir yo'l chiptalarini kuzatib boruvchi botman. Men sizga chiptalarni topishda yordam beraman va ular paydo bo'lganda sizni xabardor qilaman.\n\n🇬🇧 Hi! I am a bot for tracking railway tickets. I'll help you find tickets and notify you when they appear.",
@@ -210,6 +212,7 @@ TEXT: Dict[str, Dict[str, str]] = {
         "time_h_m": "{h} hours {m} minutes",
         "year_suffix": "",
         "months": ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        "route_expired": "🗓 Route {from_} → {to_} for {date} has been deleted because the travel date has passed.",
     },
 }
 

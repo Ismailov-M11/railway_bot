@@ -421,7 +421,31 @@ async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool
     for route in routes:
         if specific_route_id and route["id"] != specific_route_id:
             continue
-            
+
+        # --- EXPIRED ROUTE CHECK ---
+        # Delete route if travel date has already passed (Tashkent time UTC+5)
+        try:
+            tz_uz = timezone(timedelta(hours=5))
+            today = datetime.now(tz_uz).date()
+            travel_date = datetime.strptime(route["travel_date"], "%Y-%m-%d").date()
+            if travel_date < today:
+                await delete_route(route["id"])
+                logger.info(f"Route {route['id']} deleted: travel date {route['travel_date']} has passed")
+                try:
+                    date_ui = fmt_date_for_ui(lang, route["travel_date"])
+                    expired_text = t(lang, "route_expired").format(
+                        from_=route["from_name"],
+                        to_=route["to_name"],
+                        date=date_ui,
+                    )
+                    await bot.send_message(telegram_id, expired_text)
+                except Exception as e:
+                    logger.warning(f"Failed to send expired route notification: {e}")
+                continue
+        except Exception as e:
+            logger.error(f"Error checking expiry for route {route['id']}: {e}")
+        # --- END EXPIRED ROUTE CHECK ---
+
         logger.info(f"Checking route {route['id']}...")
         try:
             api_json = await fetch_trains(route["from_code"], route["to_code"], route["travel_date"], lang)
