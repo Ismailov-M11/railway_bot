@@ -24,6 +24,9 @@ from api import search_stations
 from scheduler import scheduler_tick, check_and_notify_for_user, update_route_names_for_language
 from texts import t, TEXT
 
+# Callback set in main() once bot is ready; used by handlers to refresh keyboard after route deletion
+_on_route_deleted = None
+
 # --- LOGGING ---
 from logging.handlers import RotatingFileHandler
 import sys
@@ -324,7 +327,7 @@ async def on_check_routes(msg: Message):
         if task and not task.done():
             task.cancel()
         _record_check(user_id)
-        await check_and_notify_for_user(msg.bot, user_id, force_send=True)
+        await check_and_notify_for_user(msg.bot, user_id, force_send=True, on_route_deleted=_on_route_deleted)
         return
 
     # Rate-limited: if a check is already pending, ignore this request
@@ -337,7 +340,7 @@ async def on_check_routes(msg: Message):
         try:
             await asyncio.sleep(delay)
             _record_check(user_id)
-            await check_and_notify_for_user(msg.bot, user_id, force_send=True)
+            await check_and_notify_for_user(msg.bot, user_id, force_send=True, on_route_deleted=_on_route_deleted)
         finally:
             _pending_check.pop(user_id, None)
 
@@ -440,7 +443,7 @@ async def add_route_date(msg: Message, state: FSMContext):
     # Run in background to not block UI, or await if fast enough. 
     # User requested immediate 11:17 check for THIS ROUTE ONLY.
     # We call check_and_notify_for_user with force_send=True and specific_route_id.
-    asyncio.create_task(check_and_notify_for_user(msg.bot, msg.from_user.id, force_send=True, specific_route_id=new_route_id))
+    asyncio.create_task(check_and_notify_for_user(msg.bot, msg.from_user.id, force_send=True, specific_route_id=new_route_id, on_route_deleted=_on_route_deleted))
     await state.clear()
     has = (await count_routes(msg.from_user.id)) > 0
     await msg.answer(t(lang, "menu_main"), reply_markup=kb_main(lang, has))
@@ -886,6 +889,9 @@ async def main():
             )
         except Exception as e:
             logger.warning("refresh_keyboard_routes error: %s", e)
+
+    global _on_route_deleted
+    _on_route_deleted = refresh_keyboard_routes
 
     # --- SCHEDULER ---
     scheduler = AsyncIOScheduler()
