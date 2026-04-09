@@ -23,6 +23,7 @@ TEXT: Dict[str, Dict[str, str]] = {
 
         "city_not_found": "❌ Не удалось найти город. Попробуйте ещё раз.",
         "bad_date": "❌ Неверный формат даты.",
+        "date_past": "❌ Дата уже прошла. Введите текущую или будущую дату:",
         "saved": "✅ Маршрут успешно установлен.",
         "max_routes": "❌ У вас уже установлено максимальное количество маршрутов (5).",
 
@@ -93,7 +94,8 @@ TEXT: Dict[str, Dict[str, str]] = {
         "enter_date": "Sanani kiriting (DD.MM.YYYY)",
 
         "city_not_found": "❌ Shahar topilmadi. Qayta urinib ko‘ring.",
-        "bad_date": "❌ Sana formati noto‘g‘ri.",
+        "bad_date": "❌ Sana formati noto’g’ri.",
+        "date_past": "❌ Sana o’tib ketgan. Hozirgi yoki kelajakdagi sanani kiriting:",
         "saved": "✅ Yo'nalish muvaffaqiyatli qo‘shildi.",
         "max_routes": "❌ Sizda maksimal yo'nalishlar soni (5) mavjud.",
 
@@ -165,6 +167,7 @@ TEXT: Dict[str, Dict[str, str]] = {
 
         "city_not_found": "❌ City not found. Try again.",
         "bad_date": "❌ Invalid date format.",
+        "date_past": "❌ This date has already passed. Please enter a current or future date:",
         "saved": "✅ Route created successfully.",
         "max_routes": "❌ You already have the maximum number of routes (5).",
 

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 from typing import Dict, Any, List
+from datetime import datetime, timezone, timedelta
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, MenuButtonWebApp, WebAppInfo
@@ -358,6 +359,11 @@ async def add_route_date(msg: Message, state: FSMContext):
     if not date_api:
         await msg.answer(t(lang, "bad_date"))
         return
+    tz_uz = timezone(timedelta(hours=5))
+    today = datetime.now(tz_uz).date()
+    if datetime.strptime(date_api, "%Y-%m-%d").date() < today:
+        await msg.answer(t(lang, "date_past"))
+        return
     if await count_routes(msg.from_user.id) >= 5:
         await msg.answer(t(lang, "max_routes"))
         await state.clear()
@@ -533,7 +539,14 @@ async def edit_date_handler(msg: Message, state: FSMContext):
     user = await get_user(msg.from_user.id)
     lang = user["language"]
     date_api = parse_date_ddmmyyyy(msg.text or "")
-    if not date_api: await msg.answer(t(lang, "bad_date")); return
+    if not date_api:
+        await msg.answer(t(lang, "bad_date"))
+        return
+    tz_uz = timezone(timedelta(hours=5))
+    today = datetime.now(tz_uz).date()
+    if datetime.strptime(date_api, "%Y-%m-%d").date() < today:
+        await msg.answer(t(lang, "date_past"))
+        return
     data = await state.get_data()
     route_id = int(data.get("route_id", 0))
     await update_route_field(route_id, "travel_date", date_api)
