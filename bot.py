@@ -840,12 +840,6 @@ async def main():
     dp.message.register(changing_lang_handler, SettingsFSM.changing_lang)
     dp.message.register(changing_notify_handler, SettingsFSM.changing_notify)
 
-    # --- SCHEDULER ---
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(scheduler_tick, "cron", minute="*/5", second="30", id="tick_30m", replace_existing=True, args=[bot])
-    scheduler.start()
-    logger.info("Scheduler started.")
-
     # --- WEB APP MENU BUTTON ---
     from config import WEBAPP_URL
     if WEBAPP_URL:
@@ -877,7 +871,7 @@ async def main():
             logger.warning("refresh_keyboard error: %s", e)
 
     async def refresh_keyboard_routes(telegram_id: int) -> None:
-        """Called by API server after route create/delete to update reply keyboard."""
+        """Called after route create/delete (API or scheduler) to update reply keyboard."""
         try:
             user = await get_user(telegram_id)
             if not user:
@@ -892,6 +886,12 @@ async def main():
             )
         except Exception as e:
             logger.warning("refresh_keyboard_routes error: %s", e)
+
+    # --- SCHEDULER ---
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(scheduler_tick, "cron", minute="*/5", second="30", id="tick_30m", replace_existing=True, args=[bot, refresh_keyboard_routes])
+    scheduler.start()
+    logger.info("Scheduler started.")
 
     api_runner = web.AppRunner(create_api_app(
         bot=bot,

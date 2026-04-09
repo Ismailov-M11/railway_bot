@@ -399,7 +399,7 @@ async def update_route_names_for_language(telegram_id: int, lang: str) -> None:
             continue
 
 
-async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool = False, update_names: bool = False, specific_route_id: int = None) -> int:
+async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool = False, update_names: bool = False, specific_route_id: int = None, on_route_deleted=None) -> int:
     # force_send: if True, sends message regardless of state/schedule (manual check)
     # update_names: if True, tries to resolve localized station names even if tickets not found
     # specific_route_id: if set, only check/notify this route (used for "immediate check" on creation)
@@ -441,6 +441,11 @@ async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool
                     await bot.send_message(telegram_id, expired_text)
                 except Exception as e:
                     logger.warning(f"Failed to send expired route notification: {e}")
+                if on_route_deleted:
+                    try:
+                        await on_route_deleted(telegram_id)
+                    except Exception as e:
+                        logger.warning(f"on_route_deleted callback error: {e}")
                 continue
         except Exception as e:
             logger.error(f"Error checking expiry for route {route['id']}: {e}")
@@ -602,6 +607,11 @@ async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool
                             # Send ✅ as separate message
                             await bot.send_message(telegram_id, "✅")
                             logger.info(f"Route {route['id']}: Deleted after 5 notifications")
+                            if on_route_deleted:
+                                try:
+                                    await on_route_deleted(telegram_id)
+                                except Exception as e:
+                                    logger.warning(f"on_route_deleted callback error: {e}")
                 except Exception as e:
                     logger.error(f"Send error: {e}")
             else:
@@ -619,8 +629,8 @@ async def check_and_notify_for_user(bot: Bot, telegram_id: int, force_send: bool
     return sent_count
 
 
-async def scheduler_tick(bot: Bot):
+async def scheduler_tick(bot: Bot, on_route_deleted=None):
     # every 5 minutes (User requested 5 mins for testing)
     uids = await list_users()
     for uid in uids:
-        await check_and_notify_for_user(bot, uid, force_send=False)
+        await check_and_notify_for_user(bot, uid, force_send=False, on_route_deleted=on_route_deleted)
