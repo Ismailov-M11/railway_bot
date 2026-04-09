@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import re
+import time
 from typing import Dict, Any, List
 from datetime import datetime, timezone, timedelta
 
@@ -228,6 +229,35 @@ async def on_lang_chosen(msg: Message, state: FSMContext):
     has_routes = (await count_routes(msg.from_user.id)) > 0
     await msg.answer(t(new_lang, "menu_main"), reply_markup=kb_main(new_lang, has_routes))
 
+# --- RATE LIMITER (check routes) ---
+# Thresholds: minimum gap for immediate pass; next value = forced gap
+_RATE_THRESHOLDS = [2, 3, 5, 10, 30, 60]  # seconds
+_check_state: Dict[int, Dict] = {}         # { user_id: {last: float, step: int} }
+_pending_check: Dict[int, asyncio.Task] = {}  # { user_id: Task } — at most one pending per user
+
+def _check_delay(user_id: int) -> float:
+    """Return seconds to wait before processing. 0 = proceed now."""
+    now = time.monotonic()
+    s = _check_state.get(user_id)
+    if not s:
+        return 0.0
+    elapsed = now - s["last"]
+    min_gap = _RATE_THRESHOLDS[min(s["step"], len(_RATE_THRESHOLDS) - 1)]
+    if elapsed >= min_gap:
+        return 0.0
+    forced = _RATE_THRESHOLDS[min(s["step"] + 1, len(_RATE_THRESHOLDS) - 1)]
+    return max(0.0, forced - elapsed)
+
+def _record_check(user_id: int) -> None:
+    now = time.monotonic()
+    s = _check_state.get(user_id)
+    if not s:
+        _check_state[user_id] = {"last": now, "step": 0}
+        return
+    elapsed = now - s["last"]
+    step = 0 if elapsed >= 60 else min(s["step"] + 1, len(_RATE_THRESHOLDS) - 1)
+    _check_state[user_id] = {"last": now, "step": step}
+
 # --- HANDLERS: MENU FILTERS ---
 async def filter_add_route(msg: Message) -> bool:
     user = await get_user(msg.from_user.id)
@@ -285,9 +315,33 @@ async def on_my_routes(msg: Message, state: FSMContext):
         await msg.answer(t(lang, "select_route"), reply_markup=kb_routes_inline(routes))
 
 async def on_check_routes(msg: Message):
-    user = await get_user(msg.from_user.id)
-    # await msg.answer(t(lang, "checking")) # User requested removal
-    await check_and_notify_for_user(msg.bot, msg.from_user.id, force_send=True)
+    user_id = msg.from_user.id
+    delay = _check_delay(user_id)
+
+    if delay <= 0:
+        # Proceed immediately — cancel any pending task (it's now stale)
+        task = _pending_check.pop(user_id, None)
+        if task and not task.done():
+            task.cancel()
+        _record_check(user_id)
+        await check_and_notify_for_user(msg.bot, user_id, force_send=True)
+        return
+
+    # Rate-limited: if a check is already pending, ignore this request
+    existing = _pending_check.get(user_id)
+    if existing and not existing.done():
+        return  # one delayed check is already scheduled — drop this duplicate
+
+    # Schedule exactly one delayed check
+    async def _delayed():
+        try:
+            await asyncio.sleep(delay)
+            _record_check(user_id)
+            await check_and_notify_for_user(msg.bot, user_id, force_send=True)
+        finally:
+            _pending_check.pop(user_id, None)
+
+    _pending_check[user_id] = asyncio.create_task(_delayed())
 
 # --- ADD ROUTE ---
 async def add_route_from_query(msg: Message, state: FSMContext):
