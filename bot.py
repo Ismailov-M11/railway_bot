@@ -876,7 +876,28 @@ async def main():
         except Exception as e:
             logger.warning("refresh_keyboard error: %s", e)
 
-    api_runner = web.AppRunner(create_api_app(bot=bot, on_lang_change=refresh_keyboard))
+    async def refresh_keyboard_routes(telegram_id: int) -> None:
+        """Called by API server after route create/delete to update reply keyboard."""
+        try:
+            user = await get_user(telegram_id)
+            if not user:
+                return
+            lang = user["language"]
+            cnt = await count_routes(telegram_id)
+            await bot.send_message(
+                telegram_id,
+                t(lang, "menu_main"),
+                reply_markup=kb_main(lang, has_routes=cnt > 0),
+                disable_notification=True,
+            )
+        except Exception as e:
+            logger.warning("refresh_keyboard_routes error: %s", e)
+
+    api_runner = web.AppRunner(create_api_app(
+        bot=bot,
+        on_lang_change=refresh_keyboard,
+        on_route_change=refresh_keyboard_routes,
+    ))
     await api_runner.setup()
     await web.TCPSite(api_runner, "0.0.0.0", API_PORT).start()
     logger.info("API server listening on port %d", API_PORT)

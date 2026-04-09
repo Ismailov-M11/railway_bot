@@ -151,6 +151,11 @@ async def api_create_route(request: web.Request) -> web.Response:
         )
         routes = await list_routes(tid)
         route = next((r for r in routes if r["id"] == route_id), None)
+        on_route_change = request.app.get("on_route_change")
+        if on_route_change:
+            import asyncio
+            asyncio.ensure_future(on_route_change(tid))
+
         return ok({"route": route}, 201)
     except Exception as exc:
         logger.error("create_route error: %s", exc)
@@ -197,6 +202,12 @@ async def api_delete_route(request: web.Request) -> web.Response:
         return err("Route not found", 404)
 
     await delete_route(route_id)
+
+    on_route_change = request.app.get("on_route_change")
+    if on_route_change:
+        import asyncio
+        asyncio.ensure_future(on_route_change(ctx["telegram_id"]))
+
     return ok({"ok": True})
 
 
@@ -300,10 +311,11 @@ async def api_stations(request: web.Request) -> web.Response:
 
 # ─── App factory ──────────────────────────────────────────────────────────────
 
-def create_app(bot=None, on_lang_change=None) -> web.Application:
+def create_app(bot=None, on_lang_change=None, on_route_change=None) -> web.Application:
     app = web.Application()
     app["bot"] = bot
     app["on_lang_change"] = on_lang_change
+    app["on_route_change"] = on_route_change
     app.router.add_route("OPTIONS", "/{path_info:.*}", handle_options)
     app.router.add_get   ("/api/user",               api_user)
     app.router.add_get   ("/api/routes",              api_get_routes)
